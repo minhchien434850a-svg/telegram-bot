@@ -9,7 +9,7 @@ from telegram import (
 )
 
 from telegram.ext import (
-    ApplicationBuilder,
+    Application,
     CommandHandler,
     CallbackQueryHandler,
     ContextTypes,
@@ -94,7 +94,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = """
 🤖 BOT ONLINE
 
-/menu - Open panel
+COMMANDS:
+
+/menu - Open control panel
 /mute - Reply user to mute
 /ban - Reply user to ban
 """
@@ -251,7 +253,7 @@ async def anti_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         admins = await update.effective_chat.get_administrators()
 
-        # IGNORE ADMIN
+        # IGNORE ADMINS
 
         if any(
             admin.user.id == update.message.from_user.id
@@ -320,11 +322,17 @@ async def anti_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"⚠️ Warning {count}/3"
             )
 
+# ================= ERROR HANDLER =================
+
+async def error_handler(update, context):
+
+    print(f"ERROR: {context.error}")
+
 # ================= RUN =================
 
 print("🚀 BOT STARTING...")
 
-app = ApplicationBuilder().token(TOKEN).build()
+app = Application.builder().token(TOKEN).build()
 
 # COMMANDS
 
@@ -359,6 +367,12 @@ app.add_handler(
     )
 )
 
-# START BOT
+# ERROR
+
+app.add_error_handler(error_handler)
+
+# START
+
+print("✅ BOT ONLINE")
 
 app.run_polling()
