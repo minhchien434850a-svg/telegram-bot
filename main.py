@@ -13,7 +13,7 @@ from telegram.ext import (
 
 # ================= CONFIG =================
 
-TOKEN = os.getenv("8710597616:AAHMg3o10lZnGEWLEr8CkYzFTa1WAuKrITY")
+TOKEN = os.getenv("8927671568:AAEIs-A6sS3H2KljAHpQ3hBvwYyYhnobPUo")
 
 # ================= DATABASE =================
 
