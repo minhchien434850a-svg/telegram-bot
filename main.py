@@ -1,3 +1,4 @@
+import os
 import re
 import sqlite3
 
@@ -19,26 +20,28 @@ from telegram.ext import (
 
 # ================= TOKEN =================
 
-TOKEN = "8927671568:AAEIs-A6sS3H2KljAHpQ3hBvwYyYhnobPUo"
+TOKEN = os.getenv("8927671568:AAEIs-A6sS3H2KljAHpQ3hBvwYyYhnobPUo")
 
-# Ví dụ:
-# TOKEN = "123456789:AAxxxxxxxxxxxxxxxxxxxxxxxx"
+if not TOKEN:
+    raise ValueError("BOT_TOKEN not found!")
 
 # ================= DATABASE =================
 
 conn = sqlite3.connect(
-    "bot.db",
+    "/tmp/bot.db",
     check_same_thread=False
 )
 
 cur = conn.cursor()
 
+# AntiLink table
 cur.execute("""
 CREATE TABLE IF NOT EXISTS antilink(
     chat_id TEXT PRIMARY KEY
 )
 """)
 
+# Warning table
 cur.execute("""
 CREATE TABLE IF NOT EXISTS warnings(
     user_id TEXT PRIMARY KEY,
@@ -187,16 +190,26 @@ async def mute(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_id = update.message.reply_to_message.from_user.id
 
-    await update.effective_chat.restrict_member(
-        user_id,
-        permissions=ChatPermissions(
-            can_send_messages=False
-        )
-    )
+    try:
 
-    await update.message.reply_text(
-        "🔇 User muted"
-    )
+        await update.effective_chat.restrict_member(
+            user_id,
+            permissions=ChatPermissions(
+                can_send_messages=False
+            )
+        )
+
+        await update.message.reply_text(
+            "🔇 User muted"
+        )
+
+    except Exception as e:
+
+        print(e)
+
+        await update.message.reply_text(
+            "❌ Cannot mute user"
+        )
 
 # ================= BAN =================
 
@@ -213,11 +226,21 @@ async def ban(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_id = update.message.reply_to_message.from_user.id
 
-    await update.effective_chat.ban_member(user_id)
+    try:
 
-    await update.message.reply_text(
-        "🚫 User banned"
-    )
+        await update.effective_chat.ban_member(user_id)
+
+        await update.message.reply_text(
+            "🚫 User banned"
+        )
+
+    except Exception as e:
+
+        print(e)
+
+        await update.message.reply_text(
+            "❌ Cannot ban user"
+        )
 
 # ================= ANTI LINK =================
 
@@ -264,9 +287,12 @@ async def anti_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # DELETE MESSAGE
 
         try:
+
             await update.message.delete()
-        except:
-            pass
+
+        except Exception as e:
+
+            print(e)
 
         user_id = str(update.message.from_user.id)
 
@@ -313,8 +339,9 @@ async def anti_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "🚫 User auto banned"
                 )
 
-            except:
-                pass
+            except Exception as e:
+
+                print(e)
 
         else:
 
@@ -328,51 +355,51 @@ async def error_handler(update, context):
 
     print(f"ERROR: {context.error}")
 
-# ================= RUN =================
+# ================= MAIN =================
 
-print("🚀 BOT STARTING...")
+if __name__ == "__main__":
 
-app = Application.builder().token(TOKEN).build()
+    print("🚀 BOT STARTING...")
 
-# COMMANDS
+    app = Application.builder().token(TOKEN).build()
 
-app.add_handler(
-    CommandHandler("start", start)
-)
+    # COMMANDS
 
-app.add_handler(
-    CommandHandler("menu", menu)
-)
-
-app.add_handler(
-    CommandHandler("mute", mute)
-)
-
-app.add_handler(
-    CommandHandler("ban", ban)
-)
-
-# BUTTONS
-
-app.add_handler(
-    CallbackQueryHandler(buttons)
-)
-
-# TEXT
-
-app.add_handler(
-    MessageHandler(
-        filters.TEXT & ~filters.COMMAND,
-        anti_link
+    app.add_handler(
+        CommandHandler("start", start)
     )
-)
 
-# ERROR
+    app.add_handler(
+        CommandHandler("menu", menu)
+    )
 
-app.add_error_handler(error_handler)
+    app.add_handler(
+        CommandHandler("mute", mute)
+    )
 
-# START
+    app.add_handler(
+        CommandHandler("ban", ban)
+    )
 
-print("✅ BOT ONLINE")
+    # BUTTONS
 
-app.run_polling()
+    app.add_handler(
+        CallbackQueryHandler(buttons)
+    )
+
+    # TEXT FILTER
+
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & ~filters.COMMAND,
+            anti_link
+        )
+    )
+
+    # ERROR
+
+    app.add_error_handler(error_handler)
+
+    print("✅ BOT ONLINE")
+
+    app.run_polling()
